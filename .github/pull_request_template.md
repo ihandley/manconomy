@@ -1,27 +1,30 @@
 ## Summary
 
-<!-- Briefly describe what this PR does and why -->
+<!-- What does this change do? -->
 
 ## Changes
 
-<!-- List the key changes in this PR -->
+- 
+
+## Supabase / Backend Impact
+
+<!-- Schema, migrations, env vars, functions, etc -->
 
 - 
 
 ## How to Test
 
-<!-- Steps to verify this works -->
-
-1. 
+1. Start local Supabase (`supabase start`)
 2. 
 3. 
 
 ## Checklist
 
-- [ ] Code builds and runs locally
-- [ ] Environment variables documented/updated (if applicable)
-- [ ] No sensitive data committed
-- [ ] Relevant docs updated (if needed)
+- [ ] Local Supabase runs (`supabase status`)
+- [ ] Migrations applied successfully
+- [ ] Env vars configured correctly
+- [ ] No secrets committed
+- [ ] Docs updated (if needed)
 
 ## Related Issues
 
