@@ -54,7 +54,13 @@ export default async function VerifyPhonePage({
     redirect('/login')
   }
 
-  await ensureUserProfile(supabase, user)
+  const { error: profileCreateError } = await ensureUserProfile(supabase, user)
+
+  if (profileCreateError) {
+    redirect(
+      `/verify-phone?message=${encodeURIComponent(profileCreateError.message)}`
+    )
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
