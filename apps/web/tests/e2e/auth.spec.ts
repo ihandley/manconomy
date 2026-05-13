@@ -69,3 +69,39 @@ test('authenticated user can update their profile display name', async ({ page }
 
   await expect(page.getByLabel('Display name')).toHaveValue(displayName)
 })
+
+test('onboarding blocks incomplete submission before reaching app', async ({ page }) => {
+  const email = `e2e-onboarding-validation-${Date.now()}@example.com`
+
+  await page.goto('/signup')
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password').fill('Password123!')
+  await page.getByRole('button', { name: 'Sign up' }).click()
+
+  await expect(page).toHaveURL(/\/verify-phone/)
+  await page.getByRole('button', { name: 'Mark phone verified' }).click()
+
+  await expect(page).toHaveURL(/\/onboarding/)
+
+  await page.getByRole('button', { name: 'Finish onboarding' }).click()
+
+  await expect(page).toHaveURL(/\/onboarding/)
+  await expect(page.getByLabel('Display name')).toHaveJSProperty('validity.valid', false)
+  await expect(page.getByLabel('Neighborhood')).toHaveJSProperty('validity.valid', false)
+})
+
+test('completed onboarding user skips onboarding on later login', async ({ page }) => {
+  const { email, password } = await signUpAndReachApp(page, {
+    emailPrefix: 'e2e-onboarding-skip',
+  })
+
+  await page.getByRole('button', { name: 'Sign out' }).click()
+  await expect(page).toHaveURL(/\/login/)
+
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password').fill(password)
+  await page.getByRole('button', { name: 'Log in' }).click()
+
+  await expect(page).toHaveURL(/\/app/)
+  await expect(page).not.toHaveURL(/\/onboarding/)
+})
