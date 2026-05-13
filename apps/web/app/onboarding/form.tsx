@@ -57,6 +57,15 @@ export function OnboardingForm({
       </label>
 
       <label className="flex flex-col gap-1">
+        <span>Invite code</span>
+        <input
+          name="invite_code"
+          required
+          className="rounded border px-3 py-2"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1">
         <span>Neighborhood</span>
         <select
           name="neighborhood_id"

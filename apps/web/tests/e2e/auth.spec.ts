@@ -9,7 +9,9 @@ test('signed-out user visiting /app is redirected to /login', async ({ page }) =
 })
 
 test('user can sign up and reach the authenticated app', async ({ page }) => {
-  const { email } = await signUpAndReachApp(page)
+  const { email } = await signUpAndReachApp(page, {
+    inviteCode: 'E2E-INVITE-013',
+  })
 
   await expect(page.getByText(`Auth email: ${email}`)).toBeVisible()
   await expect(page.getByText(`Profile email: ${email}`)).toBeVisible()
@@ -34,7 +36,10 @@ test('signed-in user without phone verification is sent to verification', async 
 })
 
 test('authenticated user can sign out and is redirected back to login', async ({ page }) => {
-  await signUpAndReachApp(page, { emailPrefix: 'e2e-signout' })
+  await signUpAndReachApp(page, {
+    emailPrefix: 'e2e-signout',
+    inviteCode: 'E2E-INVITE-014',
+  })
 
   await page.getByRole('button', { name: 'Sign out' }).click()
 
@@ -45,7 +50,10 @@ test('authenticated user can sign out and is redirected back to login', async ({
 })
 
 test('authenticated user is redirected away from login and signup pages', async ({ page }) => {
-  await signUpAndReachApp(page, { emailPrefix: 'e2e-redirects' })
+  await signUpAndReachApp(page, {
+    emailPrefix: 'e2e-redirects',
+    inviteCode: 'E2E-INVITE-015',
+  })
 
   await page.goto('/login')
   await expect(page).toHaveURL(/\/app/)
@@ -57,7 +65,10 @@ test('authenticated user is redirected away from login and signup pages', async 
 test('authenticated user can update their profile display name', async ({ page }) => {
   const displayName = `Ian Test ${Date.now()}`
 
-  await signUpAndReachApp(page, { emailPrefix: 'e2e-profile' })
+  await signUpAndReachApp(page, {
+    emailPrefix: 'e2e-profile',
+    inviteCode: 'E2E-INVITE-016',
+  })
 
   await page.getByLabel('Display name').fill(displayName)
   await page.getByRole('button', { name: 'Save profile' }).click()
@@ -87,12 +98,14 @@ test('onboarding blocks incomplete submission before reaching app', async ({ pag
 
   await expect(page).toHaveURL(/\/onboarding/)
   await expect(page.getByLabel('Display name')).toHaveJSProperty('validity.valid', false)
+  await expect(page.getByLabel('Invite code')).toHaveJSProperty('validity.valid', false)
   await expect(page.getByLabel('Neighborhood')).toHaveJSProperty('validity.valid', false)
 })
 
 test('completed onboarding user skips onboarding on later login', async ({ page }) => {
   const { email, password } = await signUpAndReachApp(page, {
     emailPrefix: 'e2e-onboarding-skip',
+    inviteCode: 'E2E-INVITE-017',
   })
 
   await page.getByRole('button', { name: 'Sign out' }).click()

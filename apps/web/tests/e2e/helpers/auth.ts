@@ -33,13 +33,15 @@ export async function completePhoneVerification(page: Page) {
 
 export async function completeOnboarding(
   page: Page,
-  options?: {
+  options: {
     displayName?: string
+    inviteCode: string
   }
 ) {
   const displayName = options?.displayName ?? `E2E ${Date.now()}`
 
   await page.getByLabel('Display name').fill(displayName)
+  await page.getByLabel('Invite code').fill(options.inviteCode)
   await page.getByLabel('Neighborhood').selectOption({ index: 1 })
   await page.getByRole('button', { name: 'Finish onboarding' }).click()
   await expect(page).toHaveURL(/\/app/)
@@ -63,16 +65,20 @@ export async function logIn(
 
 export async function signUpAndReachApp(
   page: Page,
-  options?: {
+  options: {
     emailPrefix?: string
     password?: string
     displayName?: string
+    inviteCode: string
   }
 ) {
   const credentials = await signUpAndReachPhoneVerification(page, options)
 
   await completePhoneVerification(page)
-  await completeOnboarding(page, { displayName: options?.displayName })
+  await completeOnboarding(page, {
+    displayName: options?.displayName,
+    inviteCode: options.inviteCode,
+  })
 
   return credentials
 }

@@ -3,6 +3,21 @@ import { redirect } from 'next/navigation'
 import { ensureUserProfile } from '../../lib/auth/profile'
 import { createClient } from '../../lib/supabase/server'
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message
+  }
+
+  return 'Could not create account.'
+}
+
 async function signUp(formData: FormData) {
   'use server'
 
