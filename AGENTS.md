@@ -72,3 +72,20 @@ Respect these boundaries.
 - Avoid broad repository scans
 - Keep progress updates short
 - Stop when acceptance criteria are satisfied, targeted validation is done or intentionally skipped, and remaining risks are noted
+
+## GitHub Project Metadata
+
+Automation scripts should source GitHub Project IDs and field IDs from `.env`.
+
+Do not hardcode:
+- project IDs
+- field IDs
+- status option IDs
+
+Preferred variables:
+
+- GITHUB_PROJECT_NUMBER
+- GITHUB_PROJECT_ID
+- GITHUB_PROJECT_STATUS_FIELD_ID
+- GITHUB_PROJECT_STATUS_DONE_OPTION_ID
+
