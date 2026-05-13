@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { hasAppAccess } from '../../lib/auth/appAccess'
+import { hasAppAccess, hasCompletedOnboarding } from '../../lib/auth/appAccess'
 import { ensureUserProfile } from '../../lib/auth/profile'
 import { createClient } from '../../lib/supabase/server'
 
@@ -80,7 +80,9 @@ export default async function AppPage({
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, email, display_name, phone_verified_at, created_at, updated_at')
+    .select(
+      'id, email, display_name, neighborhood_id, onboarding_completed_at, phone_verified_at, created_at, updated_at'
+    )
     .eq('id', user.id)
     .single()
 
@@ -90,7 +92,9 @@ export default async function AppPage({
         <div className="flex w-full max-w-md flex-col gap-4">
           <h1 className="text-2xl font-semibold">Signed in</h1>
           <p>{user.email}</p>
-          <p className="text-sm">Profile could not be loaded: {error.message}</p>
+          <p className="text-sm">
+            Profile could not be loaded: {error.message}
+          </p>
 
           <form action={signOut}>
             <button type="submit" className="rounded border px-3 py-2">
@@ -106,6 +110,10 @@ export default async function AppPage({
     redirect('/verify-phone')
   }
 
+  if (!hasCompletedOnboarding(profile)) {
+    redirect('/onboarding')
+  }
+
   const params = await searchParams
   const message = params.message
 
@@ -114,9 +122,15 @@ export default async function AppPage({
       <div className="flex w-full max-w-md flex-col gap-4">
         <h1 className="text-2xl font-semibold">Signed in</h1>
 
-        <p><strong>Auth email:</strong> {user.email}</p>
-        <p><strong>Profile email:</strong> {profile.email}</p>
-        <p><strong>Profile id:</strong> {profile.id}</p>
+        <p>
+          <strong>Auth email:</strong> {user.email}
+        </p>
+        <p>
+          <strong>Profile email:</strong> {profile.email}
+        </p>
+        <p>
+          <strong>Profile id:</strong> {profile.id}
+        </p>
 
         <form action={updateProfile} className="flex flex-col gap-3">
           <label className="flex flex-col gap-1">

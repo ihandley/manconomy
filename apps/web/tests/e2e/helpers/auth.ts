@@ -1,13 +1,18 @@
 // apps/web/tests/e2e/helpers/auth.ts
 import { expect, Page } from '@playwright/test'
 
-export async function signUpAndReachApp(page: Page, options?: {
-  emailPrefix?: string
-  password?: string
-}) {
+export async function signUpAndReachApp(
+  page: Page,
+  options?: {
+    emailPrefix?: string
+    password?: string
+    displayName?: string
+  }
+) {
   const emailPrefix = options?.emailPrefix ?? 'e2e'
   const password = options?.password ?? 'Password123!'
   const email = `${emailPrefix}-${Date.now()}@example.com`
+  const displayName = options?.displayName ?? `E2E ${Date.now()}`
 
   await page.goto('/signup')
 
@@ -17,6 +22,11 @@ export async function signUpAndReachApp(page: Page, options?: {
 
   await expect(page).toHaveURL(/\/verify-phone/)
   await page.getByRole('button', { name: 'Mark phone verified' }).click()
+  await expect(page).toHaveURL(/\/onboarding/)
+
+  await page.getByLabel('Display name').fill(displayName)
+  await page.getByLabel('Neighborhood').selectOption({ index: 1 })
+  await page.getByRole('button', { name: 'Finish onboarding' }).click()
   await expect(page).toHaveURL(/\/app/)
 
   return { email, password }
