@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { hasAppAccess } from '../../lib/auth/appAccess'
+import { ensureUserProfile } from '../../lib/auth/profile'
 import { createClient } from '../../lib/supabase/server'
 
 async function signOut() {
@@ -53,6 +54,28 @@ export default async function AppPage({
 
   if (!user) {
     redirect('/login')
+  }
+
+  const { error: profileCreateError } = await ensureUserProfile(supabase, user)
+
+  if (profileCreateError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <div className="flex w-full max-w-md flex-col gap-4">
+          <h1 className="text-2xl font-semibold">Signed in</h1>
+          <p>{user.email}</p>
+          <p className="text-sm">
+            Profile could not be created: {profileCreateError.message}
+          </p>
+
+          <form action={signOut}>
+            <button type="submit" className="rounded border px-3 py-2">
+              Sign out
+            </button>
+          </form>
+        </div>
+      </div>
+    )
   }
 
   const { data: profile, error } = await supabase

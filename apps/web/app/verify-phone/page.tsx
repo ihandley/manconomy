@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { hasAppAccess } from '../../lib/auth/appAccess'
+import { ensureUserProfile } from '../../lib/auth/profile'
 import { createClient } from '../../lib/supabase/server'
 
 async function completePhoneVerification() {
@@ -13,6 +14,14 @@ async function completePhoneVerification() {
 
   if (!user) {
     redirect('/login')
+  }
+
+  const { error: profileCreateError } = await ensureUserProfile(supabase, user)
+
+  if (profileCreateError) {
+    redirect(
+      `/verify-phone?message=${encodeURIComponent(profileCreateError.message)}`
+    )
   }
 
   const { error } = await supabase
@@ -44,6 +53,8 @@ export default async function VerifyPhonePage({
   if (!user) {
     redirect('/login')
   }
+
+  await ensureUserProfile(supabase, user)
 
   const { data: profile } = await supabase
     .from('profiles')
