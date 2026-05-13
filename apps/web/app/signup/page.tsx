@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { ensureUserProfile } from '../../lib/auth/profile'
 import { createClient } from '../../lib/supabase/server'
 
 async function signUp(formData: FormData) {
@@ -25,10 +26,7 @@ async function signUp(formData: FormData) {
     redirect('/login?message=Account created. You can now sign in.')
   }
 
-  const { error: profileError } = await supabase.from('profiles').insert({
-    id: user.id,
-    email: user.email ?? email,
-  })
+  const { error: profileError } = await ensureUserProfile(supabase, user, email)
 
   if (profileError) {
     redirect(
