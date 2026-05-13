@@ -1,6 +1,7 @@
 export type OnboardingFields = {
   displayName: string
   neighborhoodId: string
+  inviteCode: string
 }
 
 export type OnboardingValidationResult =
@@ -19,9 +20,14 @@ export function validateOnboardingForm(
 ): OnboardingValidationResult {
   const displayName = String(formData.get('display_name') ?? '').trim()
   const neighborhoodId = String(formData.get('neighborhood_id') ?? '').trim()
+  const inviteCode = String(formData.get('invite_code') ?? '').trim()
 
   if (!displayName) {
     return { ok: false, message: 'Enter a display name.' }
+  }
+
+  if (!inviteCode) {
+    return { ok: false, message: 'Enter an invite code.' }
   }
 
   if (!neighborhoodId) {
@@ -37,6 +43,7 @@ export function validateOnboardingForm(
     fields: {
       displayName,
       neighborhoodId,
+      inviteCode,
     },
   }
 }

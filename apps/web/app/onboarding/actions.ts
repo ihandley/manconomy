@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { validateAndRedeemInviteCode } from '../../lib/auth/invite'
 import { ensureUserProfile } from '../../lib/auth/profile'
 import { validateOnboardingForm } from '../../lib/auth/onboarding'
 import { createClient } from '../../lib/supabase/server'
@@ -47,12 +48,23 @@ export async function completeOnboarding(
     return { message: validation.message }
   }
 
+  const inviteRedemption = await validateAndRedeemInviteCode(
+    supabase,
+    validation.fields.inviteCode
+  )
+
+  if (!inviteRedemption.ok) {
+    return { message: inviteRedemption.message }
+  }
+
   const now = new Date().toISOString()
+  const neighborhoodId =
+    inviteRedemption.invite.neighborhoodId ?? validation.fields.neighborhoodId
   const { error } = await supabase
     .from('profiles')
     .update({
       display_name: validation.fields.displayName,
-      neighborhood_id: validation.fields.neighborhoodId,
+      neighborhood_id: neighborhoodId,
       onboarding_completed_at: now,
       updated_at: now,
     })
