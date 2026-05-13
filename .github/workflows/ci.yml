@@ -68,7 +68,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm --filter web exec playwright install --with-deps
 
       - name: Run E2E tests
         run: pnpm --filter web test:e2e
