@@ -15,6 +15,24 @@ test('user can sign up and reach the authenticated app', async ({ page }) => {
   await expect(page.getByText(`Profile email: ${email}`)).toBeVisible()
 })
 
+test('signed-in user without phone verification is sent to verification', async ({ page }) => {
+  const email = `e2e-unverified-${Date.now()}@example.com`
+
+  await page.goto('/signup')
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password').fill('Password123!')
+  await page.getByRole('button', { name: 'Sign up' }).click()
+
+  await expect(page).toHaveURL(/\/verify-phone/)
+  await expect(
+    page.getByText('Phone verification is required before you can continue')
+  ).toBeVisible()
+
+  await page.goto('/app')
+
+  await expect(page).toHaveURL(/\/verify-phone/)
+})
+
 test('authenticated user can sign out and is redirected back to login', async ({ page }) => {
   await signUpAndReachApp(page, { emailPrefix: 'e2e-signout' })
 

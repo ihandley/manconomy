@@ -15,6 +15,8 @@ export async function signUpAndReachApp(page: Page, options?: {
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign up' }).click()
 
+  await expect(page).toHaveURL(/\/verify-phone/)
+  await page.getByRole('button', { name: 'Mark phone verified' }).click()
   await expect(page).toHaveURL(/\/app/)
 
   return { email, password }

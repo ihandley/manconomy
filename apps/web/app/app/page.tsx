@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { hasAppAccess } from '../../lib/auth/appAccess'
 import { createClient } from '../../lib/supabase/server'
 
 async function signOut() {
@@ -56,7 +57,7 @@ export default async function AppPage({
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, email, display_name, created_at, updated_at')
+    .select('id, email, display_name, phone_verified_at, created_at, updated_at')
     .eq('id', user.id)
     .single()
 
@@ -76,6 +77,10 @@ export default async function AppPage({
         </div>
       </div>
     )
+  }
+
+  if (!hasAppAccess(profile)) {
+    redirect('/verify-phone')
   }
 
   const params = await searchParams
