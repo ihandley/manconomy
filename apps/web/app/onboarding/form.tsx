@@ -39,7 +39,11 @@ export function OnboardingForm({
   const [state, formAction] = useActionState(completeOnboarding, initialState)
 
   return (
-    <form action={formAction} className="flex w-full max-w-md flex-col gap-4">
+    <form
+      action={formAction}
+      noValidate
+      className="flex w-full max-w-md flex-col gap-4"
+    >
       <h1 className="text-2xl font-semibold">Set up your profile</h1>
 
       <label className="flex flex-col gap-1">
@@ -79,7 +83,11 @@ export function OnboardingForm({
 
       <SubmitButton />
 
-      {state.message ? <p className="text-sm">{state.message}</p> : null}
+      {state.message ? (
+        <p role="alert" className="text-sm">
+          {state.message}
+        </p>
+      ) : null}
     </form>
   )
 }
