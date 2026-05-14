@@ -10,20 +10,26 @@ import {
 test('signup user verifies phone, completes onboarding, and reaches app', async ({
   page,
 }) => {
-  const { email } = await signUpAndReachPhoneVerification(page, {
+  await signUpAndReachPhoneVerification(page, {
     emailPrefix: 'e2e-onboarding-flow',
   })
 
   await completePhoneVerification(page)
-  await completeOnboarding(page, { inviteCode: 'E2E-INVITE-011' })
+  await completeOnboarding(page, {})
 
-  await expect(page.getByText(`Auth email: ${email}`)).toBeVisible()
-  await expect(page.getByText(`Profile email: ${email}`)).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Neighborhood feed' })
+  ).toBeVisible()
+  await expect(
+    page.getByText('No active listings in your neighborhood yet.')
+  ).toBeVisible()
 
   await page.reload()
 
   await expect(page).toHaveURL(/\/app/)
-  await expect(page.getByText(`Auth email: ${email}`)).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Neighborhood feed' })
+  ).toBeVisible()
 })
 
 test('completed onboarding skips onboarding on future login', async ({
@@ -31,7 +37,6 @@ test('completed onboarding skips onboarding on future login', async ({
 }) => {
   const credentials = await signUpAndReachApp(page, {
     emailPrefix: 'e2e-onboarding-returning',
-    inviteCode: 'E2E-INVITE-012',
   })
 
   await page.getByRole('button', { name: 'Sign out' }).click()
@@ -40,7 +45,9 @@ test('completed onboarding skips onboarding on future login', async ({
   await logIn(page, credentials)
 
   await expect(page).toHaveURL(/\/app/)
-  await expect(page.getByText(`Auth email: ${credentials.email}`)).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Neighborhood feed' })
+  ).toBeVisible()
 })
 
 test('onboarding validation blocks incomplete submission', async ({ page }) => {
