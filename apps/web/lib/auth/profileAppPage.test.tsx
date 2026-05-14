@@ -13,6 +13,10 @@ vi.mock('../supabase/server', () => ({
   createClient: mocks.createClient,
 }))
 
+vi.mock('../listings/feed', () => ({
+  getNeighborhoodFeedListings: vi.fn(async () => ({ ok: true, listings: [] })),
+}))
+
 vi.mock('next/navigation', () => ({
   redirect: mocks.redirect,
 }))

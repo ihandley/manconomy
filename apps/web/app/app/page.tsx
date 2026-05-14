@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { hasAppAccess, hasCompletedOnboarding } from '../../lib/auth/appAccess'
 import { ensureUserProfile } from '../../lib/auth/profile'
+import { getNeighborhoodFeedListings } from '../../lib/listings/feed'
+import { ListingFeed, ListingFeedError } from '../../lib/listings/feedView'
 import { createClient } from '../../lib/supabase/server'
 
 async function signOut() {
@@ -114,27 +116,37 @@ export default async function AppPage({
     redirect('/onboarding')
   }
 
+  const neighborhoodId = profile.neighborhood_id
+
+  if (!neighborhoodId) {
+    redirect('/onboarding')
+  }
+
   const params = await searchParams
   const message = params.message
+  const feed = await getNeighborhoodFeedListings(supabase, neighborhoodId)
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <div className="flex w-full max-w-md flex-col gap-4">
-        <h1 className="text-2xl font-semibold">Signed in</h1>
+    <div className="flex min-h-screen justify-center p-6">
+      <main className="flex w-full max-w-2xl flex-col gap-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold">Neighborhood feed</h1>
+            <p className="text-sm text-foreground/70">
+              Active listings near you.
+            </p>
+          </div>
 
-        <p>
-          <strong>Auth email:</strong> {user.email}
-        </p>
-        <p>
-          <strong>Profile email:</strong> {profile.email}
-        </p>
-        <p>
-          <strong>Profile id:</strong> {profile.id}
-        </p>
+          <form action={signOut}>
+            <button type="submit" className="rounded border px-3 py-2 text-sm">
+              Sign out
+            </button>
+          </form>
+        </div>
 
-        <form action={updateProfile} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1">
-            <span>Display name</span>
+        <form action={updateProfile} className="flex items-end gap-3">
+          <label className="flex flex-1 flex-col gap-1 text-sm">
+            Display name
             <input
               name="display_name"
               defaultValue={profile.display_name ?? ''}
@@ -142,19 +154,19 @@ export default async function AppPage({
             />
           </label>
 
-          <button type="submit" className="rounded border px-3 py-2">
-            Save profile
+          <button type="submit" className="rounded border px-3 py-2 text-sm">
+            Save
           </button>
         </form>
 
         {message ? <p className="text-sm">{message}</p> : null}
 
-        <form action={signOut}>
-          <button type="submit" className="rounded border px-3 py-2">
-            Sign out
-          </button>
-        </form>
-      </div>
+        {feed.ok ? (
+          <ListingFeed listings={feed.listings} />
+        ) : (
+          <ListingFeedError message={feed.message} />
+        )}
+      </main>
     </div>
   )
 }
