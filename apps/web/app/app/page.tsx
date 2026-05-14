@@ -1,64 +1,64 @@
-import { redirect } from 'next/navigation'
-import { hasAppAccess, hasCompletedOnboarding } from '../../lib/auth/appAccess'
-import { ensureUserProfile } from '../../lib/auth/profile'
-import { getNeighborhoodFeedListings } from '../../lib/listings/feed'
-import { ListingFeed, ListingFeedError } from '../../lib/listings/feedView'
-import { createClient } from '../../lib/supabase/server'
+import { redirect } from "next/navigation";
+import { hasAppAccess, hasCompletedOnboarding } from "../../lib/auth/appAccess";
+import { ensureUserProfile } from "../../lib/auth/profile";
+import { getNeighborhoodFeedListings } from "../../lib/listings/feed";
+import { ListingFeed, ListingFeedError } from "../../lib/listings/feedView";
+import { createClient } from "../../lib/supabase/server";
 
 async function signOut() {
-  'use server'
+  "use server";
 
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect('/login')
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
 }
 
 async function updateProfile(formData: FormData) {
-  'use server'
+  "use server";
 
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
-  const displayName = String(formData.get('display_name') ?? '').trim()
+  const displayName = String(formData.get("display_name") ?? "").trim();
 
   const { error } = await supabase
-    .from('profiles')
+    .from("profiles")
     .update({
       display_name: displayName || null,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', user.id)
+    .eq("id", user.id);
 
   if (error) {
-    redirect(`/app?message=${encodeURIComponent(error.message)}`)
+    redirect(`/app?message=${encodeURIComponent(error.message)}`);
   }
 
-  redirect('/app?message=Profile updated')
+  redirect("/app?message=Profile updated");
 }
 
 export default async function AppPage({
   searchParams,
 }: {
-  searchParams: Promise<{ message?: string }>
+  searchParams: Promise<{ message?: string }>;
 }) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
-  const { error: profileCreateError } = await ensureUserProfile(supabase, user)
+  const { error: profileCreateError } = await ensureUserProfile(supabase, user);
 
   if (profileCreateError) {
     return (
@@ -77,16 +77,16 @@ export default async function AppPage({
           </form>
         </div>
       </div>
-    )
+    );
   }
 
   const { data: profile, error } = await supabase
-    .from('profiles')
+    .from("profiles")
     .select(
-      'id, email, display_name, neighborhood_id, onboarding_completed_at, phone_verified_at, created_at, updated_at'
+      "id, email, display_name, neighborhood_id, onboarding_completed_at, phone_verified_at, created_at, updated_at",
     )
-    .eq('id', user.id)
-    .single()
+    .eq("id", user.id)
+    .single();
 
   if (error) {
     return (
@@ -105,26 +105,26 @@ export default async function AppPage({
           </form>
         </div>
       </div>
-    )
+    );
   }
 
   if (!hasAppAccess(profile)) {
-    redirect('/verify-phone')
+    redirect("/verify-phone");
   }
 
   if (!hasCompletedOnboarding(profile)) {
-    redirect('/onboarding')
+    redirect("/onboarding");
   }
 
-  const neighborhoodId = profile.neighborhood_id
+  const neighborhoodId = profile.neighborhood_id;
 
   if (!neighborhoodId) {
-    redirect('/onboarding')
+    redirect("/onboarding");
   }
 
-  const params = await searchParams
-  const message = params.message
-  const feed = await getNeighborhoodFeedListings(supabase, neighborhoodId)
+  const params = await searchParams;
+  const message = params.message;
+  const feed = await getNeighborhoodFeedListings(supabase, neighborhoodId);
 
   return (
     <div className="flex min-h-screen justify-center p-6">
@@ -149,7 +149,7 @@ export default async function AppPage({
             Display name
             <input
               name="display_name"
-              defaultValue={profile.display_name ?? ''}
+              defaultValue={profile.display_name ?? ""}
               className="rounded border px-3 py-2"
             />
           </label>
@@ -168,5 +168,5 @@ export default async function AppPage({
         )}
       </main>
     </div>
-  )
+  );
 }

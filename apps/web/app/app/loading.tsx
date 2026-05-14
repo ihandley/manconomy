@@ -1,5 +1,5 @@
-import { ListingFeedLoading } from '../../lib/listings/feedView'
+import { ListingFeedLoading } from "../../lib/listings/feedView";
 
 export default function LoadingApp() {
-  return <ListingFeedLoading />
+  return <ListingFeedLoading />;
 }

@@ -1,5 +1,12 @@
-import Link from 'next/link'
-import type { FeedListing } from './feed'
+import Link from "next/link";
+import type { FeedListing } from "./feed";
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
 export function ListingFeed({ listings }: { listings: FeedListing[] }) {
   if (listings.length === 0) {
@@ -7,7 +14,7 @@ export function ListingFeed({ listings }: { listings: FeedListing[] }) {
       <section className="rounded border border-dashed p-6 text-sm">
         No active listings in your neighborhood yet.
       </section>
-    )
+    );
   }
 
   return (
@@ -35,22 +42,44 @@ export function ListingFeed({ listings }: { listings: FeedListing[] }) {
             <h2 className="truncate text-base font-semibold">
               {listing.title}
             </h2>
-            <p className="mt-1 text-sm">
-              {listing.askingCredits ?? 0} credits
-            </p>
-            <p className="mt-2 text-xs text-foreground/70">
-              {[listing.condition, listing.category].filter(Boolean).join(' · ')}
-            </p>
-            {listing.sellerDisplayName ? (
-              <p className="mt-2 text-xs text-foreground/70">
-                Listed by {listing.sellerDisplayName}
-              </p>
-            ) : null}
+            <p className="mt-1 text-sm">{listing.askingCredits ?? 0} credits</p>
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-foreground/70">
+              <div>
+                <dt className="sr-only">Listing type</dt>
+                <dd>{formatValue(listing.listingType)}</dd>
+              </div>
+              <div>
+                <dt className="sr-only">Status</dt>
+                <dd>{formatValue(listing.status)}</dd>
+              </div>
+              <div>
+                <dt className="sr-only">Category</dt>
+                <dd>{formatValue(listing.category)}</dd>
+              </div>
+              <div>
+                <dt className="sr-only">Condition</dt>
+                <dd>{formatValue(listing.condition)}</dd>
+              </div>
+              <div>
+                <dt className="sr-only">Seller</dt>
+                <dd>{listing.sellerDisplayName ?? "Unknown seller"}</dd>
+              </div>
+              <div>
+                <dt className="sr-only">Neighborhood</dt>
+                <dd>{listing.neighborhoodName ?? "Unknown neighborhood"}</dd>
+              </div>
+            </dl>
+            <time
+              dateTime={listing.listedAt}
+              className="mt-2 block text-xs text-foreground/70"
+            >
+              {formatListingDate(listing.listedAt)}
+            </time>
           </div>
         </Link>
       ))}
     </section>
-  )
+  );
 }
 
 export function ListingFeedError({ message }: { message: string }) {
@@ -58,7 +87,7 @@ export function ListingFeedError({ message }: { message: string }) {
     <section className="rounded border p-6 text-sm">
       Listings could not be loaded: {message}
     </section>
-  )
+  );
 }
 
 export function ListingFeedLoading() {
@@ -71,5 +100,17 @@ export function ListingFeedLoading() {
         <div className="h-28 rounded border bg-foreground/5" />
       </main>
     </div>
-  )
+  );
+}
+
+export function formatListingDate(value: string) {
+  return dateFormatter.format(new Date(value));
+}
+
+function formatValue(value: string | null) {
+  if (!value) {
+    return "Unspecified";
+  }
+
+  return value.replaceAll("_", " ");
 }
