@@ -6,7 +6,7 @@
 	format \
 	help \
 	install \
-	issue-checkpoint \
+	checkpoint \
 	lint \
 	lint-fix \
 	session-handoff \
@@ -67,9 +67,13 @@ format:
 install:
 	pnpm install
 
-issue-checkpoint:
-	@test -n "$(N)" || (echo "Usage: make issue-checkpoint N=<issue-number>" && exit 1)
+checkpoint:
+	$(eval N := $(word 2,$(MAKECMDGOALS)))
+	@test -n "$(N)" || (echo "Usage: make checkpoint <issue-number>" && exit 1)
 	./scripts/issue-checkpoint.sh $(N)
+
+%:
+	@:
 
 lint:
 	pnpm lint
