@@ -40,8 +40,10 @@ function createPayload(overrides: Record<string, unknown> = {}) {
 function createSupabaseClient({
   user = createUser(),
   profile = {
+    display_name: "Ian",
     neighborhood_id: "neighborhood-1",
     onboarding_completed_at: "2026-05-13T00:00:00.000Z",
+    phone_verified_at: "2026-05-13T00:00:00.000Z",
   },
   insertedListing = {},
   profileError = null,
@@ -73,10 +75,15 @@ function createSupabaseClient({
   }));
   const listingSelect = vi.fn(() => ({ single }));
   const insert = vi.fn(() => ({ select: listingSelect }));
+  const upsert = vi.fn(async () => ({ error: null }));
 
   const from = vi.fn((table: string) => {
     if (table === "profiles") {
       return { select: profileSelect };
+    }
+
+    if (table === "users") {
+      return { upsert };
     }
 
     return { insert };
@@ -89,6 +96,7 @@ function createSupabaseClient({
     } as unknown as Parameters<typeof createListingFromPayload>[0],
     from,
     insert,
+    upsert,
     profileEq,
   };
 }
@@ -101,7 +109,7 @@ describe("createListingFromPayload", () => {
   it("creates one active listing owned by the authenticated user", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-13T12:00:00.000Z"));
-    const { client, insert } = createSupabaseClient();
+    const { client, insert, upsert } = createSupabaseClient();
 
     await expect(
       createListingFromPayload(
@@ -124,6 +132,17 @@ describe("createListingFromPayload", () => {
     });
 
     expect(insert).toHaveBeenCalledTimes(1);
+    expect(upsert).toHaveBeenCalledWith(
+      {
+        id: "user-1",
+        display_name: "Ian",
+        neighborhood_id: "neighborhood-1",
+        updated_at: "2026-05-13T12:00:00.000Z",
+      },
+      {
+        onConflict: "id",
+      },
+    );
     expect(insert).toHaveBeenCalledWith({
       seller_id: "user-1",
       neighborhood_id: "neighborhood-1",
@@ -179,8 +198,10 @@ describe("createListingFromPayload", () => {
   it("fails users without completed onboarding neighborhood context", async () => {
     const { client, insert } = createSupabaseClient({
       profile: {
+        display_name: null,
         neighborhood_id: null,
         onboarding_completed_at: null,
+        phone_verified_at: "2026-05-13T00:00:00.000Z",
       },
     });
 
@@ -192,6 +213,28 @@ describe("createListingFromPayload", () => {
       status: 403,
     });
 
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("requires phone verification through the current app access rules", async () => {
+    const { client, insert, upsert } = createSupabaseClient({
+      profile: {
+        display_name: "Ian",
+        neighborhood_id: "neighborhood-1",
+        onboarding_completed_at: "2026-05-13T00:00:00.000Z",
+        phone_verified_at: null,
+      },
+    });
+
+    await expect(
+      createListingFromPayload(client, createPayload()),
+    ).resolves.toEqual({
+      ok: false,
+      message: "Complete onboarding before creating a listing.",
+      status: 403,
+    });
+
+    expect(upsert).not.toHaveBeenCalled();
     expect(insert).not.toHaveBeenCalled();
   });
 

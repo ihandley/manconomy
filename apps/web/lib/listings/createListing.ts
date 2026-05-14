@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { hasCompletedOnboarding } from "../auth/appAccess";
 import type { createClient } from "../supabase/server";
 import {
   LISTING_PHOTO_BUCKET,
@@ -33,8 +34,10 @@ type ListingCategory = (typeof LISTING_CATEGORIES)[number];
 type ListingCondition = (typeof LISTING_CONDITIONS)[number];
 
 type UserProfile = {
+  display_name: string | null;
   neighborhood_id: string | null;
   onboarding_completed_at: string | null;
+  phone_verified_at: string | null;
 };
 
 type ListingCreateFields = {
@@ -99,6 +102,16 @@ export async function createListingFromPayload(
     return validation;
   }
 
+  const ownerResult = await ensureListingOwner(
+    supabase,
+    user,
+    profileResult.profile,
+  );
+
+  if (!ownerResult.ok) {
+    return ownerResult;
+  }
+
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("listings")
@@ -136,6 +149,34 @@ export async function createListingFromPayload(
   };
 }
 
+async function ensureListingOwner(
+  supabase: SupabaseClient,
+  user: User,
+  profile: UserProfile,
+): Promise<{ ok: true } | { ok: false; message: string; status: 500 }> {
+  const { error } = await supabase.from("users").upsert(
+    {
+      id: user.id,
+      display_name: profile.display_name,
+      neighborhood_id: profile.neighborhood_id,
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "id",
+    },
+  );
+
+  if (error) {
+    return {
+      ok: false,
+      message: error.message,
+      status: 500,
+    };
+  }
+
+  return { ok: true };
+}
+
 async function getListingProfile(
   supabase: SupabaseClient,
   user: User,
@@ -145,7 +186,9 @@ async function getListingProfile(
 > {
   const { data, error } = await supabase
     .from("profiles")
-    .select("neighborhood_id,onboarding_completed_at")
+    .select(
+      "display_name,neighborhood_id,onboarding_completed_at,phone_verified_at",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -157,7 +200,7 @@ async function getListingProfile(
     };
   }
 
-  if (!data?.neighborhood_id || !data.onboarding_completed_at) {
+  if (!data || !hasCompletedOnboarding(data)) {
     return {
       ok: false,
       message: "Complete onboarding before creating a listing.",
