@@ -15,7 +15,7 @@ test('signup user verifies phone, completes onboarding, and reaches app', async 
   })
 
   await completePhoneVerification(page)
-  await completeOnboarding(page, {})
+  await completeOnboarding(page, { inviteCode: 'E2E-INVITE-011' })
 
   await expect(
     page.getByRole('heading', { name: 'Neighborhood feed' })
@@ -37,6 +37,7 @@ test('completed onboarding skips onboarding on future login', async ({
 }) => {
   const credentials = await signUpAndReachApp(page, {
     emailPrefix: 'e2e-onboarding-returning',
+    inviteCode: 'E2E-INVITE-012',
   })
 
   await page.getByRole('button', { name: 'Sign out' }).click()
