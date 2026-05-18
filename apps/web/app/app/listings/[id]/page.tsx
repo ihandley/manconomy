@@ -12,8 +12,15 @@ import {
   ListingDetailNotFound,
   ListingDetailUnavailable,
   ListingDetailView,
+  type PendingTradeRequestSummary,
 } from "../../../../lib/listings/detailView";
 import { createClient } from "../../../../lib/supabase/server";
+
+type PendingTradeRequestRow = {
+  id: string;
+  offered_credits: number;
+  created_at: string;
+};
 
 export default async function ListingDetailPage({
   params,
@@ -83,13 +90,46 @@ export default async function ListingDetailPage({
     );
   }
 
+  const pendingTradeRequests =
+    listing.listing.sellerId === user.id
+      ? await getPendingTradeRequests(supabase, listing.listing.id, user.id)
+      : [];
+
   return (
     <ListingDetailShell
       content={
-        <ListingDetailView currentUserId={user.id} listing={listing.listing} />
+        <ListingDetailView
+          currentUserId={user.id}
+          listing={listing.listing}
+          pendingTradeRequests={pendingTradeRequests}
+        />
       }
     />
   );
+}
+
+async function getPendingTradeRequests(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  listingId: string,
+  sellerId: string,
+): Promise<PendingTradeRequestSummary[]> {
+  const { data, error } = await supabase
+    .from("trades")
+    .select("id,offered_credits,created_at")
+    .eq("listing_id", listingId)
+    .eq("seller_id", sellerId)
+    .eq("status", "requested")
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return (data as PendingTradeRequestRow[]).map((trade) => ({
+    id: trade.id,
+    offeredCredits: trade.offered_credits,
+    createdAt: trade.created_at,
+  }));
 }
 
 function ListingDetailShell({ content }: { content: ReactNode }) {
