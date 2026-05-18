@@ -2,12 +2,20 @@ import Link from "next/link";
 import type { ListingDetail } from "./detail";
 import { formatListingDate } from "./feedView";
 
+export type PendingTradeRequestSummary = {
+  id: string;
+  offeredCredits: number;
+  createdAt: string;
+};
+
 export function ListingDetailView({
   currentUserId,
   listing,
+  pendingTradeRequests = [],
 }: {
   currentUserId: string;
   listing: ListingDetail;
+  pendingTradeRequests?: PendingTradeRequestSummary[];
 }) {
   const isActive = listing.status === "active";
   const isOwner = listing.sellerId === currentUserId;
@@ -104,6 +112,28 @@ export function ListingDetailView({
         <p className="rounded border p-4 text-sm">
           This is your listing, so buyer trade actions are hidden.
         </p>
+      ) : null}
+
+      {isOwner && pendingTradeRequests.length > 0 ? (
+        <section className="grid gap-3 rounded border p-4 text-sm">
+          <h2 className="font-semibold">Pending trade requests</h2>
+          <ul className="grid gap-2">
+            {pendingTradeRequests.map((trade) => (
+              <li
+                key={trade.id}
+                className="flex items-center justify-between gap-4"
+              >
+                <span>
+                  {trade.offeredCredits} credits ·{" "}
+                  {formatListingDate(trade.createdAt)}
+                </span>
+                <Link href={`/app/trades/${trade.id}`} className="underline">
+                  Review
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
     </article>
   );

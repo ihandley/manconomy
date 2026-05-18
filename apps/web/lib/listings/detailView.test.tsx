@@ -90,6 +90,30 @@ describe("ListingDetailView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("links sellers from pending requests to the accept or decline screen", () => {
+    render(
+      <ListingDetailView
+        currentUserId="seller-1"
+        listing={activeListing}
+        pendingTradeRequests={[
+          {
+            id: "trade-1",
+            offeredCredits: 25,
+            createdAt: "2026-05-18T00:00:00.000Z",
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Pending trade requests" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Review" })).toHaveAttribute(
+      "href",
+      "/app/trades/trade-1",
+    );
+  });
+
   it("renders not-found, error, loading, and photo fallback states", () => {
     const { rerender } = render(<ListingDetailNotFound />);
     expect(screen.getByText("Listing not found.")).toBeInTheDocument();
