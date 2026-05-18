@@ -273,6 +273,32 @@ describe("createTradeRequestFromPayload", () => {
     expect(insert).not.toHaveBeenCalled();
   });
 
+  it("blocks listings locked by another buyer even when RLS hides the trade", async () => {
+    const { client, insert } = createSupabaseClient({
+      lockedTrade: null,
+      insertError: {
+        code: "23514",
+        message: "This listing is unavailable.",
+      },
+    });
+
+    await expect(
+      createTradeRequestFromPayload(client, { listing_id: LISTING_ID }),
+    ).resolves.toEqual({
+      ok: false,
+      message: "This listing is unavailable.",
+      status: 409,
+    });
+
+    expect(insert).toHaveBeenCalledWith({
+      listing_id: LISTING_ID,
+      buyer_id: BUYER_ID,
+      seller_id: SELLER_ID,
+      status: "requested",
+      offered_credits: 25,
+    });
+  });
+
   it("handles duplicate active buyer requests predictably", async () => {
     const { client, insert } = createSupabaseClient({
       duplicateTrade: { id: "existing-trade" },

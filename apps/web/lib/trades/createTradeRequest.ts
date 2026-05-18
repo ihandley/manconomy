@@ -150,6 +150,18 @@ export async function createTradeRequestFromPayload(
       };
     }
 
+    if (
+      "code" in error &&
+      error.code === "23514" &&
+      error.message === "This listing is unavailable."
+    ) {
+      return {
+        ok: false,
+        message: "This listing is unavailable.",
+        status: 409,
+      };
+    }
+
     return {
       ok: false,
       message: error.message,
