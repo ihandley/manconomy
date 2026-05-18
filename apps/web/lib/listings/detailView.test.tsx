@@ -5,6 +5,7 @@ import {
   ListingDetailError,
   ListingDetailLoading,
   ListingDetailNotFound,
+  ListingDetailUnavailable,
   ListingDetailView,
 } from "./detailView";
 
@@ -55,21 +56,24 @@ describe("ListingDetailView", () => {
     );
   });
 
-  it("shows unavailable state and hides CTA for non-active listings", () => {
-    render(
-      <ListingDetailView
-        currentUserId="buyer-1"
-        listing={{ ...activeListing, status: "completed" }}
-      />,
-    );
+  it.each(["completed", "archived", "cancelled"])(
+    "shows unavailable state and hides CTA for %s listings",
+    (status) => {
+      render(
+        <ListingDetailView
+          currentUserId="buyer-1"
+          listing={{ ...activeListing, status }}
+        />,
+      );
 
-    expect(
-      screen.getByText("This listing is unavailable."),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("link", { name: "Request trade" }),
-    ).not.toBeInTheDocument();
-  });
+      expect(
+        screen.getByText("This listing is unavailable."),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", { name: "Request trade" }),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it("hides buyer CTA for the listing owner", () => {
     render(
@@ -89,6 +93,11 @@ describe("ListingDetailView", () => {
   it("renders not-found, error, loading, and photo fallback states", () => {
     const { rerender } = render(<ListingDetailNotFound />);
     expect(screen.getByText("Listing not found.")).toBeInTheDocument();
+
+    rerender(<ListingDetailUnavailable />);
+    expect(
+      screen.getByText("This listing is unavailable."),
+    ).toBeInTheDocument();
 
     rerender(<ListingDetailError message="database offline" />);
     expect(

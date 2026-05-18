@@ -35,8 +35,9 @@ function createSupabaseClient({
   signedUrl?: string;
 } = {}) {
   const maybeSingle = vi.fn(async () => ({ data: listing, error }));
-  const eq = vi.fn(() => ({ maybeSingle }));
-  const select = vi.fn(() => ({ eq }));
+  const neighborhoodEq = vi.fn(() => ({ maybeSingle }));
+  const idEq = vi.fn(() => ({ eq: neighborhoodEq }));
+  const select = vi.fn(() => ({ eq: idEq }));
   const from = vi.fn(() => ({ select }));
   const createSignedUrl = vi.fn(async () => ({
     data: { signedUrl },
@@ -51,7 +52,8 @@ function createSupabaseClient({
     } as unknown as Parameters<typeof getListingDetail>[0],
     from,
     select,
-    eq,
+    idEq,
+    neighborhoodEq,
     maybeSingle,
     storageFrom,
     createSignedUrl,
@@ -64,13 +66,16 @@ describe("getListingDetail", () => {
       client,
       from,
       select,
-      eq,
+      idEq,
+      neighborhoodEq,
       maybeSingle,
       storageFrom,
       createSignedUrl,
     } = createSupabaseClient();
 
-    await expect(getListingDetail(client, "listing-1")).resolves.toEqual({
+    await expect(
+      getListingDetail(client, "listing-1", "neighborhood-1"),
+    ).resolves.toEqual({
       ok: true,
       listing: {
         id: "listing-1",
@@ -96,7 +101,11 @@ describe("getListingDetail", () => {
     expect(select).toHaveBeenCalledWith(
       "id,seller_id,title,description,listing_type,status,category,condition,asking_credits,photos,ai_suggested_price,ai_confidence,ai_seal,published_at,created_at,users!listings_seller_id_fkey(display_name),neighborhoods!listings_neighborhood_id_fkey(name)",
     );
-    expect(eq).toHaveBeenCalledWith("id", "listing-1");
+    expect(idEq).toHaveBeenCalledWith("id", "listing-1");
+    expect(neighborhoodEq).toHaveBeenCalledWith(
+      "neighborhood_id",
+      "neighborhood-1",
+    );
     expect(maybeSingle).toHaveBeenCalled();
     expect(storageFrom).toHaveBeenCalledWith(LISTING_PHOTO_BUCKET);
     expect(createSignedUrl).toHaveBeenCalledWith(
@@ -110,7 +119,9 @@ describe("getListingDetail", () => {
       listing: null,
     });
 
-    await expect(getListingDetail(client, "missing-listing")).resolves.toEqual({
+    await expect(
+      getListingDetail(client, "missing-listing", "neighborhood-1"),
+    ).resolves.toEqual({
       ok: false,
       kind: "not-found",
       message: "Listing not found.",
@@ -118,13 +129,75 @@ describe("getListingDetail", () => {
     expect(createSignedUrl).not.toHaveBeenCalled();
   });
 
+  it("returns not found for an active listing outside the user neighborhood", async () => {
+    const { client, neighborhoodEq, createSignedUrl } = createSupabaseClient({
+      listing: null,
+    });
+
+    await expect(
+      getListingDetail(client, "listing-1", "neighborhood-2"),
+    ).resolves.toEqual({
+      ok: false,
+      kind: "not-found",
+      message: "Listing not found.",
+    });
+    expect(neighborhoodEq).toHaveBeenCalledWith(
+      "neighborhood_id",
+      "neighborhood-2",
+    );
+    expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it.each(["completed", "archived", "cancelled"])(
+    "returns unavailable for %s listings without signing photos",
+    async (status) => {
+      const { client, createSignedUrl } = createSupabaseClient({
+        listing: {
+          id: "listing-1",
+          seller_id: "seller-1",
+          title: "Cordless Drill",
+          description: "Works great.",
+          listing_type: "item",
+          status,
+          category: "tools",
+          condition: "good",
+          asking_credits: 25,
+          photos: [
+            {
+              bucket: LISTING_PHOTO_BUCKET,
+              path: "seller-1/listing-photos/drill.jpg",
+            },
+          ],
+          ai_suggested_price: null,
+          ai_confidence: null,
+          ai_seal: false,
+          published_at: "2026-05-13T00:00:00.000Z",
+          created_at: "2026-05-13T00:00:00.000Z",
+          users: { display_name: "Ian" },
+          neighborhoods: { name: "Old Town" },
+        },
+      });
+
+      await expect(
+        getListingDetail(client, "listing-1", "neighborhood-1"),
+      ).resolves.toEqual({
+        ok: false,
+        kind: "unavailable",
+        message: "This listing is unavailable.",
+      });
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    },
+  );
+
   it("returns load errors without signing photos", async () => {
     const { client, createSignedUrl } = createSupabaseClient({
       listing: null,
       error: { message: "permission denied" },
     });
 
-    await expect(getListingDetail(client, "listing-1")).resolves.toEqual({
+    await expect(
+      getListingDetail(client, "listing-1", "neighborhood-1"),
+    ).resolves.toEqual({
       ok: false,
       kind: "error",
       message: "permission denied",

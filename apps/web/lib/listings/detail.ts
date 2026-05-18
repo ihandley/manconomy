@@ -60,13 +60,14 @@ export type ListingDetailResult =
     }
   | {
       ok: false;
-      kind: "not-found" | "error";
+      kind: "not-found" | "unavailable" | "error";
       message: string;
     };
 
 export async function getListingDetail(
   supabase: SupabaseClient,
   listingId: string,
+  neighborhoodId: string,
 ): Promise<ListingDetailResult> {
   const { data, error } = await supabase
     .from("listings")
@@ -74,6 +75,7 @@ export async function getListingDetail(
       "id,seller_id,title,description,listing_type,status,category,condition,asking_credits,photos,ai_suggested_price,ai_confidence,ai_seal,published_at,created_at,users!listings_seller_id_fkey(display_name),neighborhoods!listings_neighborhood_id_fkey(name)",
     )
     .eq("id", listingId)
+    .eq("neighborhood_id", neighborhoodId)
     .maybeSingle();
 
   if (error) {
@@ -92,9 +94,19 @@ export async function getListingDetail(
     };
   }
 
+  const listing = data as ListingRow;
+
+  if (listing.status !== "active") {
+    return {
+      ok: false,
+      kind: "unavailable",
+      message: "This listing is unavailable.",
+    };
+  }
+
   return {
     ok: true,
-    listing: await toListingDetail(supabase, data as ListingRow),
+    listing: await toListingDetail(supabase, listing),
   };
 }
 

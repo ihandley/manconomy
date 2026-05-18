@@ -115,6 +115,14 @@ export function ListingDetailNotFound() {
   );
 }
 
+export function ListingDetailUnavailable() {
+  return (
+    <section className="rounded border p-6 text-sm">
+      This listing is unavailable.
+    </section>
+  );
+}
+
 export function ListingDetailError({ message }: { message: string }) {
   return (
     <section className="rounded border p-6 text-sm">

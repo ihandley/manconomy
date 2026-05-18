@@ -10,6 +10,7 @@ import { getListingDetail } from "../../../../lib/listings/detail";
 import {
   ListingDetailError,
   ListingDetailNotFound,
+  ListingDetailUnavailable,
   ListingDetailView,
 } from "../../../../lib/listings/detailView";
 import { createClient } from "../../../../lib/supabase/server";
@@ -64,7 +65,7 @@ export default async function ListingDetailPage({
     redirect("/onboarding");
   }
 
-  const listing = await getListingDetail(supabase, id);
+  const listing = await getListingDetail(supabase, id, profile.neighborhood_id);
 
   if (!listing.ok) {
     return (
@@ -72,6 +73,8 @@ export default async function ListingDetailPage({
         content={
           listing.kind === "not-found" ? (
             <ListingDetailNotFound />
+          ) : listing.kind === "unavailable" ? (
+            <ListingDetailUnavailable />
           ) : (
             <ListingDetailError message={listing.message} />
           )
