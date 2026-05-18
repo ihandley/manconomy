@@ -128,6 +128,14 @@ export default async function TradePage({
               </form>
             </div>
           ) : null}
+          {trade.status === "accepted" ? (
+            <Link
+              href={`/app/trades/${trade.id}/messages`}
+              className="rounded bg-foreground px-4 py-3 text-center font-medium text-background"
+            >
+              Open messages
+            </Link>
+          ) : null}
         </section>
       </main>
     </div>
