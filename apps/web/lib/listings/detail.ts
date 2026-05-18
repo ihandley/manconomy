@@ -69,6 +69,10 @@ export async function getListingDetail(
   listingId: string,
   neighborhoodId: string,
 ): Promise<ListingDetailResult> {
+  if (!isUuid(listingId)) {
+    return notFound();
+  }
+
   const { data, error } = await supabase
     .from("listings")
     .select(
@@ -87,11 +91,7 @@ export async function getListingDetail(
   }
 
   if (!data) {
-    return {
-      ok: false,
-      kind: "not-found",
-      message: "Listing not found.",
-    };
+    return notFound();
   }
 
   const listing = data as ListingRow;
@@ -108,6 +108,20 @@ export async function getListingDetail(
     ok: true,
     listing: await toListingDetail(supabase, listing),
   };
+}
+
+function notFound(): ListingDetailResult {
+  return {
+    ok: false,
+    kind: "not-found",
+    message: "Listing not found.",
+  };
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 async function toListingDetail(

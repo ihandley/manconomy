@@ -2,9 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { getListingDetail } from "./detail";
 import { LISTING_PHOTO_BUCKET } from "./photoUpload";
 
+const LISTING_ID = "11111111-1111-4111-8111-111111111111";
+const MISSING_LISTING_ID = "22222222-2222-4222-8222-222222222222";
+
 function createSupabaseClient({
   listing = {
-    id: "listing-1",
+    id: LISTING_ID,
     seller_id: "seller-1",
     title: "Cordless Drill",
     description: "Works great.",
@@ -74,11 +77,11 @@ describe("getListingDetail", () => {
     } = createSupabaseClient();
 
     await expect(
-      getListingDetail(client, "listing-1", "neighborhood-1"),
+      getListingDetail(client, LISTING_ID, "neighborhood-1"),
     ).resolves.toEqual({
       ok: true,
       listing: {
-        id: "listing-1",
+        id: LISTING_ID,
         sellerId: "seller-1",
         title: "Cordless Drill",
         description: "Works great.",
@@ -101,7 +104,7 @@ describe("getListingDetail", () => {
     expect(select).toHaveBeenCalledWith(
       "id,seller_id,title,description,listing_type,status,category,condition,asking_credits,photos,ai_suggested_price,ai_confidence,ai_seal,published_at,created_at,users!listings_seller_id_fkey(display_name),neighborhoods!listings_neighborhood_id_fkey(name)",
     );
-    expect(idEq).toHaveBeenCalledWith("id", "listing-1");
+    expect(idEq).toHaveBeenCalledWith("id", LISTING_ID);
     expect(neighborhoodEq).toHaveBeenCalledWith(
       "neighborhood_id",
       "neighborhood-1",
@@ -114,13 +117,27 @@ describe("getListingDetail", () => {
     );
   });
 
-  it("returns not found for an unknown listing ID", async () => {
+  it("returns not found for a malformed listing ID without querying", async () => {
+    const { client, from, createSignedUrl } = createSupabaseClient();
+
+    await expect(
+      getListingDetail(client, "not-real", "neighborhood-1"),
+    ).resolves.toEqual({
+      ok: false,
+      kind: "not-found",
+      message: "Listing not found.",
+    });
+    expect(from).not.toHaveBeenCalled();
+    expect(createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it("returns not found for a valid but missing listing ID", async () => {
     const { client, createSignedUrl } = createSupabaseClient({
       listing: null,
     });
 
     await expect(
-      getListingDetail(client, "missing-listing", "neighborhood-1"),
+      getListingDetail(client, MISSING_LISTING_ID, "neighborhood-1"),
     ).resolves.toEqual({
       ok: false,
       kind: "not-found",
@@ -135,7 +152,7 @@ describe("getListingDetail", () => {
     });
 
     await expect(
-      getListingDetail(client, "listing-1", "neighborhood-2"),
+      getListingDetail(client, LISTING_ID, "neighborhood-2"),
     ).resolves.toEqual({
       ok: false,
       kind: "not-found",
@@ -153,7 +170,7 @@ describe("getListingDetail", () => {
     async (status) => {
       const { client, createSignedUrl } = createSupabaseClient({
         listing: {
-          id: "listing-1",
+          id: LISTING_ID,
           seller_id: "seller-1",
           title: "Cordless Drill",
           description: "Works great.",
@@ -179,7 +196,7 @@ describe("getListingDetail", () => {
       });
 
       await expect(
-        getListingDetail(client, "listing-1", "neighborhood-1"),
+        getListingDetail(client, LISTING_ID, "neighborhood-1"),
       ).resolves.toEqual({
         ok: false,
         kind: "unavailable",
@@ -196,7 +213,7 @@ describe("getListingDetail", () => {
     });
 
     await expect(
-      getListingDetail(client, "listing-1", "neighborhood-1"),
+      getListingDetail(client, LISTING_ID, "neighborhood-1"),
     ).resolves.toEqual({
       ok: false,
       kind: "error",
