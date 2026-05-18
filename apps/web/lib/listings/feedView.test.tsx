@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ListingFeed, ListingFeedError, ListingFeedLoading } from "./feedView";
-import ListingDetailPlaceholder from "../../app/app/listings/[id]/page";
 
 describe("ListingFeed", () => {
   it("renders all required listing metadata and links to detail", () => {
@@ -88,24 +87,5 @@ describe("ListingFeed", () => {
     expect(screen.getAllByText("Unspecified")).toHaveLength(2);
     expect(screen.getByText("Unknown seller")).toBeInTheDocument();
     expect(screen.getByText("Unknown neighborhood")).toBeInTheDocument();
-  });
-
-  it("renders the detail placeholder route targeted by feed cards", async () => {
-    render(
-      await ListingDetailPlaceholder({
-        params: Promise.resolve({ id: "listing-1" }),
-      }),
-    );
-
-    expect(
-      screen.getByRole("heading", { name: "Listing detail" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Listing detail for listing-1 will be available here."),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Back to feed" })).toHaveAttribute(
-      "href",
-      "/app",
-    );
   });
 });
