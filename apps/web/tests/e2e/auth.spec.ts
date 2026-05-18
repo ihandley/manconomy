@@ -9,12 +9,17 @@ test('signed-out user visiting /app is redirected to /login', async ({ page }) =
 })
 
 test('user can sign up and reach the authenticated app', async ({ page }) => {
-  const { email } = await signUpAndReachApp(page, {
+  await signUpAndReachApp(page, {
     inviteCode: 'E2E-INVITE-013',
   })
 
-  await expect(page.getByText(`Auth email: ${email}`)).toBeVisible()
-  await expect(page.getByText(`Profile email: ${email}`)).toBeVisible()
+  await expect(page).toHaveURL(/\/app/)
+  await expect(
+    page.getByRole('heading', { name: 'Neighborhood feed' })
+  ).toBeVisible()
+  await expect(
+    page.getByText('No active listings in your neighborhood yet.')
+  ).toBeVisible()
 })
 
 test('signed-in user without phone verification is sent to verification', async ({ page }) => {
@@ -71,7 +76,7 @@ test('authenticated user can update their profile display name', async ({ page }
   })
 
   await page.getByLabel('Display name').fill(displayName)
-  await page.getByRole('button', { name: 'Save profile' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
 
   await expect(page).toHaveURL(/\/app\?message=/)
   await expect(page.getByText('Profile updated')).toBeVisible()
